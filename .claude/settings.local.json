@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 generate_postman.py)",
+      "Bash(php --version)",
+      "Bash(node generate_postman.js)",
+      "Bash(mv generate_postman.js generate_postman.cjs)",
+      "Bash(node generate_postman.cjs)",
+      "Bash(node -e \"const data = require\\(''./class_up_api_postman_collection.json''\\); console.log\\(''Valid JSON''\\); console.log\\(''Categories:'', Object.keys\\(data.item\\).length\\); console.log\\(''Categories:'', data.item.map\\(cat => cat.name\\).join\\('', ''\\)\\)\")",
+      "Bash(find /home/masterdba6/projetos/class-up-api -name *postman* -o -name *collection*)",
+      "Read(///wsl.localhost/Ubuntu-24.04/home/masterdba6/projetos/class-up-api/**)",
+      "Read(//tmp/**)",
+      "Bash(python3:*)",
+      "Read(///wsl.localhost/Ubuntu-24.04/home/masterdba6/**)",
+      "Read(//c/Users/Robson/**)"
+    ]
+  }
+}
