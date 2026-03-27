@@ -81,16 +81,25 @@ class StudentController extends Controller
     public function show(Request $request, Student $student)
     {
         $user = $request->user();
+        $role = $user->role;
 
-        // Check if user is guardian of this student or if user is the student
-        $isGuardian = $student->guardians()->where('user_id', $user->id)->exists();
-        $isStudent = $student->user_id === $user->id;
-
-        if (!$isGuardian && !$isStudent) {
-            return response()->json(['message' => 'Acesso negado.'], 403);
+        if ($role === 'admin') {
+            if ($user->school_id !== $student->school_id) {
+                return response()->json(['message' => 'Acesso negado.'], 403);
+            }
+            return response()->json($student->load('guardians'));
         }
+        else {
+            // Check if user is guardian of this student or if user is the student
+            $isGuardian = $student->guardians()->where('user_id', $user->id)->exists();
+            $isStudent = $student->user_id === $user->id;
 
-        return response()->json($student->load('guardians'));
+            if (!$isGuardian && !$isStudent) {
+                return response()->json(['message' => 'Acesso negado.'], 403);
+            }
+
+            return response()->json($student->load('guardians'));
+        }
     }
 
     public function update(Request $request, Student $student)
