@@ -229,12 +229,10 @@ class SubscriptionController extends Controller
     public function success(Request $request)
     {
         $sessionId = $request->query('session_id');
+        $frontendUrl = env('FRONTEND_URL', 'http://localhost:3000');
 
         if (!$sessionId) {
-            return response()->json([
-                'error' => 'Missing session_id',
-                'code' => 'INVALID_REQUEST',
-            ], 400);
+            return redirect($frontendUrl . '/subscription/failed?error=Missing+session_id');
         }
 
         try {
@@ -247,20 +245,14 @@ class SubscriptionController extends Controller
             $schoolId = $session->metadata->school_id ?? null;
 
             if (!$userId || !$planId) {
-                return response()->json([
-                    'error' => 'Invalid session metadata',
-                    'code' => 'INVALID_METADATA',
-                ], 400);
+                return redirect($frontendUrl . '/subscription/failed?error=Invalid+session+metadata');
             }
 
             $user = \App\Models\User::findOrFail($userId);
 
             // Check if payment was successful
             if ($session->payment_status !== 'paid') {
-                return response()->json([
-                    'error' => 'Payment not completed',
-                    'code' => 'PAYMENT_NOT_COMPLETED',
-                ], 400);
+                return redirect($frontendUrl . '/subscription/failed?error=Payment+not+completed');
             }
 
             // Get the subscription from Stripe
@@ -270,7 +262,7 @@ class SubscriptionController extends Controller
             $plan = Plan::findOrFail($planId);
 
             // Create subscription in database
-            $subscription = Subscription::create([
+            Subscription::create([
                 'user_id' => $userId,
                 'plan_id' => $planId,
                 'school_id' => $schoolId,
@@ -283,28 +275,12 @@ class SubscriptionController extends Controller
                 'payment_method' => 'stripe',
             ]);
 
-            return response()->json([
-                'message' => 'Subscription created successfully',
-                'subscription' => [
-                    'id' => $subscription->id,
-                    'status' => $subscription->status,
-                    'plan_name' => $plan->name,
-                    'starts_at' => $subscription->starts_at,
-                    'ends_at' => $subscription->ends_at,
-                ],
-            ], 201);
+            // Redirect to dashboard on success
+            return redirect($frontendUrl . '/dashboard?subscription=success');
         } catch (ApiErrorException $e) {
-            return response()->json([
-                'error' => 'Failed to process subscription',
-                'code' => 'STRIPE_ERROR',
-                'message' => $e->getMessage(),
-            ], 500);
+            return redirect($frontendUrl . '/subscription/failed?error=' . urlencode($e->getMessage()));
         } catch (\Exception $e) {
-            return response()->json([
-                'error' => 'Failed to create subscription',
-                'code' => 'DATABASE_ERROR',
-                'message' => $e->getMessage(),
-            ], 500);
+            return redirect($frontendUrl . '/subscription/failed?error=' . urlencode($e->getMessage()));
         }
     }
 
@@ -313,9 +289,7 @@ class SubscriptionController extends Controller
      */
     public function checkoutCanceled(Request $request)
     {
-        return response()->json([
-            'message' => 'Checkout was canceled',
-            'code' => 'CHECKOUT_CANCELED',
-        ], 200);
+        $frontendUrl = env('FRONTEND_URL', 'http://localhost:3000');
+        return redirect($frontendUrl . '/subscription/canceled');
     }
 }
