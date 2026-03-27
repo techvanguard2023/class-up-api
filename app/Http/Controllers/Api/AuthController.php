@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use App\Models\School;
+use App\Models\Guardian;
 
 class AuthController extends Controller
 {
@@ -20,16 +21,16 @@ class AuthController extends Controller
             'name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            'role' => 'required|string|in:admin,teacher,student,guardian',
+            'phone' => 'required|string|max:20',
+            'role' => 'required|string|in:admin,user',
             'password' => 'required|string|confirmed|min:8',
 
             // Fields for creating a new school (required only for admin)
             'school_name' => 'required_if:role,admin|string|max:255',
             'school_type_id' => 'required_if:role,admin|exists:school_types,id',
-            'phone' => 'required_if:role,admin|string|max:20|unique:schools,phone',
 
-            // Field for joining an existing school (required for others)
-            'school_id' => 'required_unless:role,admin|exists:schools,id',
+            // Field for joining an existing school (required for users)
+            'invite_code' => 'required_unless:role,admin|exists:schools,invite_code',
         ]);
 
         return DB::transaction(function () use ($request) {
@@ -59,8 +60,24 @@ class AuthController extends Controller
                 $user->update(['school_id' => $school->id]);
             }
             else {
+
+                $school = School::where('invite_code', $request->invite_code)->first();
+
+                if (!$school) {
+                    throw ValidationException::withMessages([
+                        'invite_code' => ['Código de convite inválido.'],
+                    ]);
+                }
+
                 // Link non-admin user to the existing school provided
-                $user->update(['school_id' => $request->school_id]);
+                $user->update(['school_id' => $school->id]);
+
+                $guardian = Guardian::create([
+                    'user_id' => $user->id,
+                    'school_id' => $school->id,
+                    'name' => $user->name,
+                    'phone' => $user->phone,
+                ]);
             }
 
             $token = $user->createToken('auth_token')->plainTextToken;
@@ -126,15 +143,15 @@ class AuthController extends Controller
 
         if ($subscription) {
             $currentPlan = [
-                'id'            => $subscription->plan->id,
-                'name'          => $subscription->plan->name,
-                'description'   => $subscription->plan->description,
-                'price'         => $subscription->plan->price,
+                'id' => $subscription->plan->id,
+                'name' => $subscription->plan->name,
+                'description' => $subscription->plan->description,
+                'price' => $subscription->plan->price,
                 'billing_cycle' => $subscription->plan->billing_cycle,
-                'status'        => $subscription->status,
-                'is_trial'      => $subscription->isTrial(),
-                'is_expired'    => $subscription->isExpired(),
-                'expires_at'    => $subscription->ends_at,
+                'status' => $subscription->status,
+                'is_trial' => $subscription->isTrial(),
+                'is_expired' => $subscription->isExpired(),
+                'expires_at' => $subscription->ends_at,
                 'trial_ends_at' => $subscription->trial_ends_at,
             ];
         }

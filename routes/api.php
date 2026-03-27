@@ -79,9 +79,11 @@ Route::prefix('v1')->group(function () {
             Route::get('finance/summary', [FinanceController::class, 'summary']);
         });
 
+        // Student endpoints (no subscription required)
+        Route::apiResource('students', StudentController::class);
+
         // All protected routes that require active subscription
         Route::middleware('validate.subscription')->group(function () {
-            Route::apiResource('students', StudentController::class);
             Route::apiResource('classes', ClassSessionController::class);
             Route::apiResource('certificate-templates', CertificateTemplateController::class);
             Route::apiResource('certificates', CertificateController::class);

@@ -18,9 +18,9 @@ class ClassroomController extends Controller
         $validated = $request->validate([
             'school_id' => 'required|exists:schools,id',
             'name' => 'required|string',
-            'year' => 'required|integer',
-            'shift' => 'required|string',
-            'level' => 'required|string',
+            'year' => 'nullable|integer',
+            'shift' => 'nullable|string',
+            'level' => 'nullable|string',
         ]);
 
         $classroom = Classroom::create($validated);

@@ -10,7 +10,7 @@ class Guardian extends Model
 {
     use SoftDeletes, BelongsToSchool;
 
-    protected $fillable = ['school_id', 'user_id', 'cpf', 'phone'];
+    protected $fillable = ['school_id', 'user_id', 'name', 'cpf', 'phone'];
 
     public function user()
     {
@@ -19,8 +19,8 @@ class Guardian extends Model
 
     public function students()
     {
-        return $this->belongsToMany(Student::class, 'guardian_student')
-                    ->withPivot('relationship')
-                    ->withTimestamps();
+        return $this->belongsToMany(Student::class , 'guardian_student')
+            ->withPivot('relationship')
+            ->withTimestamps();
     }
 }

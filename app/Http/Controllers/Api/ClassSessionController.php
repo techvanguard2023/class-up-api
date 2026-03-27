@@ -11,7 +11,7 @@ class ClassSessionController extends Controller
 {
     public function index()
     {
-        return response()->json(ClassSession::all());
+        return response()->json(ClassSession::with('instructor')->get());
     }
 
     public function store(Request $request)

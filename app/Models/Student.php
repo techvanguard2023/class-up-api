@@ -12,7 +12,6 @@ class Student extends Model
 
     protected $fillable = [
         'name',
-        'email',
         'user_id',
         'school_id',
         'modality',
@@ -22,9 +21,6 @@ class Student extends Model
         'photo_url',
         'attendance_rate',
         'birth_date',
-        'guardian_name',
-        'guardian_email',
-        'guardian_phone',
         'health_info',
     ];
 
@@ -41,9 +37,9 @@ class Student extends Model
 
     public function guardians()
     {
-        return $this->belongsToMany(Guardian::class, 'guardian_student')
-                    ->withPivot('relationship')
-                    ->withTimestamps();
+        return $this->belongsToMany(Guardian::class , 'guardian_student')
+            ->withPivot('relationship')
+            ->withTimestamps();
     }
 
     public function enrollments()

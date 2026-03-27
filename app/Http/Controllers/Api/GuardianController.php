@@ -17,6 +17,7 @@ class GuardianController extends Controller
     {
         $validated = $request->validate([
             'user_id' => 'required|exists:users,id',
+            'name' => 'required|string',
             'cpf' => 'nullable|string',
             'phone' => 'nullable|string',
         ]);

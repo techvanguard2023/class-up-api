@@ -4,14 +4,15 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
+return new class extends Migration 
 {
     public function up(): void
     {
         Schema::create('students', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('school_id')->nullable()->constrained()->cascadeOnDelete();
             $table->string('name');
-            $table->string('email')->unique();
             $table->string('modality');
             $table->string('level');
             $table->enum('status', ['active', 'inactive', 'suspended'])->default('active');
@@ -19,9 +20,6 @@ return new class extends Migration
             $table->string('photo_url')->nullable();
             $table->float('attendance_rate')->default(0);
             $table->date('birth_date')->nullable();
-            $table->string('guardian_name')->nullable();
-            $table->string('guardian_email')->nullable();
-            $table->string('guardian_phone')->nullable();
             $table->json('health_info')->nullable();
             $table->timestamps();
         });

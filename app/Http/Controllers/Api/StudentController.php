@@ -4,38 +4,91 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Student;
+use App\Models\Guardian;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 
 class StudentController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return response()->json(Student::all());
+        $user = $request->user();
+
+        if (!$user->school_id) {
+            return response()->json(['message' => 'Usuário não está vinculado a nenhuma escola.'], 403);
+        }
+
+        $students = Student::where('school_id', $user->school_id)->get();
+        return response()->json($students);
     }
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
+        $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:students,email',
-            'modality' => 'required|string',
-            'level' => 'required|string',
-            'status' => 'in:active,inactive,suspended',
+            'modality' => 'required|string|max:255',
+            'level' => 'required|string|max:255',
             'birth_date' => 'nullable|date',
-            'guardian_name' => 'nullable|string',
-            'guardian_email' => 'nullable|email',
-            'guardian_phone' => 'nullable|string',
-            'health_info' => 'nullable|array',
+            'guardian_relationship' => 'nullable|string|max:255',
         ]);
 
-        $student = Student::create($validated);
-        return response()->json($student, Response::HTTP_CREATED);
+        $user = $request->user();
+
+        // Ensure user belongs to a school
+        if (!$user->school_id) {
+            return response()->json(['message' => 'Usuário não está vinculado a nenhuma escola.'], 403);
+        }
+
+        return DB::transaction(function () use ($request, $user) {
+            // 1. Create Student
+            $student = Student::create([
+                'name' => $request->name,
+                'modality' => $request->modality,
+                'level' => $request->level,
+                'birth_date' => $request->birth_date,
+                'user_id' => $user->id,
+                'school_id' => $user->school_id,
+                'status' => 'active',
+            ]);
+
+            // 2. Create or get Guardian for the authenticated user
+            $guardian = Guardian::firstOrCreate(
+            [
+                'user_id' => $user->id,
+                'school_id' => $user->school_id,
+            ],
+            [
+                'name' => $user->name . ' ' . $user->last_name,
+                'phone' => $user->phone ?? null,
+            ]
+            );
+
+            // 3. Link Guardian to Student
+            $guardian->students()->attach($student->id, [
+                'relationship' => $request->guardian_relationship ?? 'responsável',
+            ]);
+
+            return response()->json([
+                'message' => 'Aluno cadastrado com sucesso.',
+                'student' => $student->load('guardians'),
+            ], Response::HTTP_CREATED);
+        });
     }
 
-    public function show(Student $student)
+    public function show(Request $request, Student $student)
     {
-        return response()->json($student);
+        $user = $request->user();
+
+        // Check if user is guardian of this student or if user is the student
+        $isGuardian = $student->guardians()->where('user_id', $user->id)->exists();
+        $isStudent = $student->user_id === $user->id;
+
+        if (!$isGuardian && !$isStudent) {
+            return response()->json(['message' => 'Acesso negado.'], 403);
+        }
+
+        return response()->json($student->load('guardians'));
     }
 
     public function update(Request $request, Student $student)

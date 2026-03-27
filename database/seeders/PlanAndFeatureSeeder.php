@@ -67,7 +67,7 @@ class PlanAndFeatureSeeder extends Seeder
                 'name' => 'Gratuito',
                 'description' => 'Ideal para escolas pequenas começarem',
                 'price' => 0.00,
-                'stripe_price_id' => 'price_1TD8JXRl5DyR8YOYSVCqNqDg',
+                'stripe_price_id' => 'price_1TFHORRl5DyR8YOYf2EcqLCJ',
                 'billing_cycle' => 'monthly',
                 'color' => 'gray',
                 'active' => true,
@@ -83,13 +83,13 @@ class PlanAndFeatureSeeder extends Seeder
             [
                 'name' => 'Bronze',
                 'description' => 'Perfeito para pequenas e médias escolas',
-                'price' => 29.90,
-                'stripe_price_id' => 'price_1TD8JuRl5DyR8YOYyIOnjhA4',
+                'price' => 79.90,
+                'stripe_price_id' => 'price_1TFHOsRl5DyR8YOY8fDgrECt',
                 'billing_cycle' => 'monthly',
                 'color' => 'amber',
                 'active' => true,
                 'features' => [
-                    'gerenciar_estudantes' => 100, // 100 students
+                    'gerenciar_estudantes' => 50, // 50 students
                     'gerenciar_turmas' => 5,
                     'gerenciar_notas' => null,
                     'rastrear_frequencia' => null,
@@ -100,14 +100,14 @@ class PlanAndFeatureSeeder extends Seeder
             [
                 'name' => 'Prata',
                 'description' => 'Para escolas médias com recursos avançados',
-                'price' => 79.90,
-                'stripe_price_id' => 'price_1TD8KIRl5DyR8YOYou321zpa',
+                'price' => 119.90,
+                'stripe_price_id' => 'price_1TFHPJRl5DyR8YOYk8XgTvwW',
                 'billing_cycle' => 'monthly',
                 'color' => 'slate',
                 'active' => true,
                 'features' => [
-                    'gerenciar_estudantes' => 500, // 500 students
-                    'gerenciar_turmas' => 20,
+                    'gerenciar_estudantes' => 150, // 150 students
+                    'gerenciar_turmas' => 10,
                     'gerenciar_notas' => null,
                     'rastrear_frequencia' => null,
                     'gerar_certificados' => null,
@@ -120,7 +120,7 @@ class PlanAndFeatureSeeder extends Seeder
                 'name' => 'Ouro',
                 'description' => 'Plano premium para grandes instituições educacionais',
                 'price' => 199.90,
-                'stripe_price_id' => 'price_1TD8KeRl5DyR8YOYGMtb3C0b',
+                'stripe_price_id' => 'price_1TFHPcRl5DyR8YOYUve7P51T',
                 'billing_cycle' => 'monthly',
                 'color' => 'yellow',
                 'active' => true,
