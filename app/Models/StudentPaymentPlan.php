@@ -4,11 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use App\Traits\BelongsToSchool;
 
 class StudentPaymentPlan extends Model
 {
-    use HasFactory, BelongsToSchool;
+    use HasFactory;
 
     protected $fillable = [
         'student_id',
@@ -33,11 +32,6 @@ class StudentPaymentPlan extends Model
     public function schoolPaymentPlan()
     {
         return $this->belongsTo(SchoolPaymentPlan::class);
-    }
-
-    public function school()
-    {
-        return $this->belongsTo(School::class);
     }
 
     /**
