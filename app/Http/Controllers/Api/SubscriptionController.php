@@ -29,6 +29,7 @@ class SubscriptionController extends Controller
 
         $plan = Plan::findOrFail($validated['plan_id']);
         $user = $request->user();
+        $frontendUrl = env('FRONTEND_URL', 'http://localhost:3000');
 
         // Check if plan has Stripe price ID
         if (!$plan->stripe_price_id) {
@@ -49,8 +50,8 @@ class SubscriptionController extends Controller
                     ],
                 ],
                 'mode' => 'subscription',
-                'success_url' => route('subscription.success') . '?session_id={CHECKOUT_SESSION_ID}',
-                'cancel_url' => route('subscription.cancel'), // named route points to checkoutCanceled method
+                'success_url' => $frontendUrl . '/#/subscription/success?session_id={CHECKOUT_SESSION_ID}&user_id=' . $user->id,
+                'cancel_url' => $frontendUrl . '/#/subscription/canceled',
                 'metadata' => [
                     'user_id' => $user->id,
                     'plan_id' => $plan->id,
@@ -228,7 +229,82 @@ class SubscriptionController extends Controller
     }
 
     /**
-     * Handle successful checkout session
+     * Confirm subscription after Stripe redirect (called by frontend)
+     */
+    public function confirm(Request $request)
+    {
+        $request->validate([
+            'session_id' => 'required|string',
+        ]);
+
+        $sessionId = $request->input('session_id');
+
+        try {
+            // Retrieve the checkout session from Stripe
+            $session = $this->stripe->checkout->sessions->retrieve($sessionId);
+
+            // Get user from metadata
+            $userId = $session->metadata->user_id ?? null;
+            $planId = $session->metadata->plan_id ?? null;
+            $schoolId = $session->metadata->school_id ?? null;
+
+            if (!$userId || !$planId) {
+                return response()->json([
+                    'error' => 'Invalid session metadata',
+                    'code' => 'INVALID_METADATA',
+                ], 400);
+            }
+
+            // Check if payment was successful
+            if ($session->payment_status !== 'paid') {
+                return response()->json([
+                    'error' => 'Payment not completed',
+                    'code' => 'PAYMENT_NOT_COMPLETED',
+                ], 400);
+            }
+
+            // Get the subscription from Stripe
+            $stripeSubscription = $this->stripe->subscriptions->retrieve($session->subscription);
+
+            // Get plan from database
+            $plan = Plan::findOrFail($planId);
+
+            // Create subscription in database
+            Subscription::create([
+                'user_id' => $userId,
+                'plan_id' => $planId,
+                'school_id' => $schoolId,
+                'status' => $stripeSubscription->status,
+                'stripe_customer_id' => $session->customer,
+                'stripe_subscription_id' => $session->subscription,
+                'stripe_price_id' => $plan->stripe_price_id,
+                'starts_at' => now(),
+                'ends_at' => $stripeSubscription->current_period_end ? now()->setTimestamp($stripeSubscription->current_period_end) : null,
+                'payment_method' => 'stripe',
+            ]);
+
+            return response()->json([
+                'message' => 'Subscription confirmed successfully',
+                'plan_name' => $plan->name,
+                'status' => $stripeSubscription->status,
+            ], 201);
+        } catch (ApiErrorException $e) {
+            return response()->json([
+                'error' => 'Failed to confirm subscription',
+                'code' => 'STRIPE_ERROR',
+                'message' => $e->getMessage(),
+            ], 500);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to confirm subscription',
+                'code' => 'DATABASE_ERROR',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Handle successful checkout session (deprecated - use confirm instead)
      */
     public function success(Request $request)
     {

@@ -66,6 +66,7 @@ Route::prefix('v1')->group(function () {
         Route::get('subscription/status', [SubscriptionController::class, 'status']);
         Route::get('subscription/invoices', [SubscriptionController::class, 'invoices']);
         Route::post('subscription/checkout', [SubscriptionController::class, 'checkout'])->name('subscription.checkout');
+        Route::post('subscription/confirm', [SubscriptionController::class, 'confirm']);
         Route::post('subscription/cancel', [SubscriptionController::class, 'cancel']);
         Route::post('subscription/resume', [SubscriptionController::class, 'resume']);
 
