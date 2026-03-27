@@ -28,6 +28,7 @@ class StudentPaymentPlanController extends Controller
         $validated = $request->validate([
             'student_id' => 'required|exists:students,id',
             'school_payment_plan_id' => 'required|exists:school_payment_plans,id',
+            'due_day' => 'nullable|integer|between:1,31',
             'start_date' => 'required|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
             'active' => 'boolean',
@@ -71,6 +72,7 @@ class StudentPaymentPlanController extends Controller
     public function update(Request $request, StudentPaymentPlan $studentPaymentPlan)
     {
         $validated = $request->validate([
+            'due_day' => 'nullable|integer|between:1,31',
             'active' => 'boolean',
             'end_date' => 'nullable|date|after_or_equal:start_date',
         ]);

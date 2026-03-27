@@ -13,6 +13,7 @@ class StudentPaymentPlan extends Model
     protected $fillable = [
         'student_id',
         'school_payment_plan_id',
+        'due_day',
         'start_date',
         'end_date',
         'active',
@@ -37,5 +38,14 @@ class StudentPaymentPlan extends Model
     public function school()
     {
         return $this->belongsTo(School::class);
+    }
+
+    /**
+     * Get the due day for this student payment plan.
+     * Returns the student's custom due_day if set, otherwise the plan's default due_day
+     */
+    public function getDueDay()
+    {
+        return $this->due_day ?? $this->schoolPaymentPlan->due_day;
     }
 }
