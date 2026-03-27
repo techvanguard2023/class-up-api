@@ -62,7 +62,8 @@ class SubscriptionController extends Controller
                 'checkout_url' => $session->url,
                 'session_id' => $session->id,
             ]);
-        } catch (ApiErrorException $e) {
+        }
+        catch (ApiErrorException $e) {
             return response()->json([
                 'error' => 'Failed to create checkout session',
                 'code' => 'STRIPE_ERROR',
@@ -128,7 +129,7 @@ class SubscriptionController extends Controller
             // Cancel at end of period
             $this->stripe->subscriptions->update(
                 $subscription->stripe_subscription_id,
-                ['cancel_at_period_end' => true]
+            ['cancel_at_period_end' => true]
             );
 
             $subscription->update(['cancel_at_period_end' => true]);
@@ -137,7 +138,8 @@ class SubscriptionController extends Controller
                 'message' => 'Subscription will be canceled at the end of the billing period',
                 'expires_at' => $subscription->ends_at,
             ]);
-        } catch (ApiErrorException $e) {
+        }
+        catch (ApiErrorException $e) {
             return response()->json([
                 'error' => 'Failed to cancel subscription',
                 'code' => 'STRIPE_ERROR',
@@ -160,28 +162,29 @@ class SubscriptionController extends Controller
         try {
             $stripeInvoices = $this->stripe->invoices->all([
                 'customer' => $subscription->stripe_customer_id,
-                'limit'    => 24,
+                'limit' => 24,
             ]);
 
             $invoices = collect($stripeInvoices->data)->map(fn($invoice) => [
-                'id'                  => $invoice->id,
-                'number'              => $invoice->number,
-                'status'              => $invoice->status,
-                'amount_paid'         => $invoice->amount_paid / 100,
-                'amount_due'          => $invoice->amount_due / 100,
-                'currency'            => strtoupper($invoice->currency),
-                'period_start'        => date('Y-m-d', $invoice->period_start),
-                'period_end'          => date('Y-m-d', $invoice->period_end),
-                'invoice_pdf'         => $invoice->invoice_pdf,
-                'hosted_invoice_url'  => $invoice->hosted_invoice_url,
-                'created_at'          => date('Y-m-d H:i:s', $invoice->created),
+            'id' => $invoice->id,
+            'number' => $invoice->number,
+            'status' => $invoice->status,
+            'amount_paid' => $invoice->amount_paid / 100,
+            'amount_due' => $invoice->amount_due / 100,
+            'currency' => strtoupper($invoice->currency),
+            'period_start' => date('Y-m-d', $invoice->period_start),
+            'period_end' => date('Y-m-d', $invoice->period_end),
+            'invoice_pdf' => $invoice->invoice_pdf,
+            'hosted_invoice_url' => $invoice->hosted_invoice_url,
+            'created_at' => date('Y-m-d H:i:s', $invoice->created),
             ]);
 
             return response()->json(['invoices' => $invoices]);
-        } catch (ApiErrorException $e) {
+        }
+        catch (ApiErrorException $e) {
             return response()->json([
-                'error'   => 'Failed to fetch invoices',
-                'code'    => 'STRIPE_ERROR',
+                'error' => 'Failed to fetch invoices',
+                'code' => 'STRIPE_ERROR',
                 'message' => $e->getMessage(),
             ], 500);
         }
@@ -205,7 +208,7 @@ class SubscriptionController extends Controller
         try {
             $this->stripe->subscriptions->update(
                 $subscription->stripe_subscription_id,
-                ['cancel_at_period_end' => false]
+            ['cancel_at_period_end' => false]
             );
 
             $subscription->update(['cancel_at_period_end' => false]);
@@ -214,7 +217,8 @@ class SubscriptionController extends Controller
                 'message' => 'Subscription resumption scheduled',
                 'expires_at' => $subscription->ends_at,
             ]);
-        } catch (ApiErrorException $e) {
+        }
+        catch (ApiErrorException $e) {
             return response()->json([
                 'error' => 'Failed to resume subscription',
                 'code' => 'STRIPE_ERROR',
@@ -276,10 +280,12 @@ class SubscriptionController extends Controller
             ]);
 
             // Redirect to dashboard on success
-            return redirect($frontendUrl . '/dashboard?subscription=success');
-        } catch (ApiErrorException $e) {
+            return redirect($frontendUrl . '/?subscription=success');
+        }
+        catch (ApiErrorException $e) {
             return redirect($frontendUrl . '/subscription/failed?error=' . urlencode($e->getMessage()));
-        } catch (\Exception $e) {
+        }
+        catch (\Exception $e) {
             return redirect($frontendUrl . '/subscription/failed?error=' . urlencode($e->getMessage()));
         }
     }
