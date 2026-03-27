@@ -15,6 +15,7 @@ class Student extends Model
         'user_id',
         'school_id',
         'modality',
+        'outside_school_name',
         'level',
         'status',
         'next_class',

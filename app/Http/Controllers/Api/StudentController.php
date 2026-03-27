@@ -28,6 +28,7 @@ class StudentController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'modality' => 'required|string|max:255',
+            'outside_school_name' => 'nullable|string|max:255',
             'level' => 'required|string|max:255',
             'birth_date' => 'nullable|date',
             'guardian_relationship' => 'nullable|string|max:255',
@@ -45,6 +46,7 @@ class StudentController extends Controller
             $student = Student::create([
                 'name' => $request->name,
                 'modality' => $request->modality,
+                'outside_school_name' => $request->outside_school_name,
                 'level' => $request->level,
                 'birth_date' => $request->birth_date,
                 'user_id' => $user->id,
@@ -97,6 +99,7 @@ class StudentController extends Controller
             'name' => 'string|max:255',
             'email' => 'email|unique:students,email,' . $student->id,
             'modality' => 'string',
+            'outside_school_name' => 'nullable|string|max:255',
             'level' => 'string',
             'status' => 'in:active,inactive,suspended',
             'birth_date' => 'nullable|date',
