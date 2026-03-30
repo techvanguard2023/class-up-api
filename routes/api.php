@@ -25,6 +25,9 @@ use App\Http\Controllers\Api\SchoolPaymentPlanController;
 use App\Http\Controllers\Api\PaymentMethodController;
 use App\Http\Controllers\Api\StudentPaymentPlanController;
 use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\ExpenseController;
+use App\Http\Controllers\Api\IncomeController;
 
 Route::prefix('v1')->group(function () {
 
@@ -53,8 +56,7 @@ Route::prefix('v1')->group(function () {
     // Stripe webhook (must not require authentication)
     Route::post('webhooks/stripe', [StripeWebhookController::class, 'handle'])->withoutMiddleware('auth:sanctum');
 
-    // Subscription success/cancel (public routes, no auth required)
-    Route::get('subscription/success', [SubscriptionController::class, 'success'])->name('subscription.success');
+    // Subscription cancel (public route, no auth required)
     Route::get('subscription/checkout-canceled', [SubscriptionController::class, 'checkoutCanceled'])->name('subscription.cancel');
 
     Route::middleware('auth:sanctum')->group(function () {
@@ -103,6 +105,11 @@ Route::prefix('v1')->group(function () {
             Route::apiResource('student-payment-plans', StudentPaymentPlanController::class);
             Route::apiResource('payments', PaymentController::class);
             Route::post('payments/{id}/mark-as-paid', [PaymentController::class, 'markAsPaid'])->name('payments.markAsPaid');
+
+            // Financial management routes
+            Route::apiResource('products', ProductController::class);
+            Route::apiResource('expenses', ExpenseController::class);
+            Route::apiResource('incomes', IncomeController::class);
         });
     });
 });

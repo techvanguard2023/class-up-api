@@ -12,6 +12,23 @@ class Enrollment extends Model
 
     protected $fillable = ['school_id', 'student_id', 'classroom_id', 'status', 'year'];
 
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::created(function ($enrollment) {
+            $enrollment->classroom?->increment('enrolled');
+        });
+
+        static::deleted(function ($enrollment) {
+            $enrollment->classroom?->decrement('enrolled');
+        });
+
+        static::restored(function ($enrollment) {
+            $enrollment->classroom?->increment('enrolled');
+        });
+    }
+
     public function student()
     {
         return $this->belongsTo(Student::class);

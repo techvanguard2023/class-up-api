@@ -8,21 +8,23 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('plans', function (Blueprint $table) {
+        Schema::create('products', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('school_id')->constrained()->cascadeOnDelete();
             $table->string('name');
             $table->text('description')->nullable();
             $table->decimal('price', 10, 2);
-            $table->string('stripe_price_id')->nullable();
-            $table->enum('billing_cycle', ['monthly', 'annual']);
-            $table->boolean('active')->default(true);
-            $table->string('color')->nullable();
+            $table->integer('quantity')->default(0);
+            $table->string('category')->nullable();
+            $table->string('sku')->nullable();
+            $table->string('image')->nullable();
+            $table->softDeletes();
             $table->timestamps();
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('plans');
+        Schema::dropIfExists('products');
     }
 };

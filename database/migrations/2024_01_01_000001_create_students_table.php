@@ -14,6 +14,7 @@ return new class extends Migration
             $table->foreignId('school_id')->nullable()->constrained()->cascadeOnDelete();
             $table->string('name');
             $table->string('modality');
+            $table->string('outside_school_name')->nullable();
             $table->string('level');
             $table->enum('status', ['active', 'inactive', 'suspended'])->default('active');
             $table->string('next_class')->nullable(); // Could be a relationship or computed

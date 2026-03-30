@@ -12,6 +12,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('school_id')->constrained()->cascadeOnDelete();
             $table->string('name');
+            $table->integer('capacity');
+            $table->integer('enrolled')->default(0);
             $table->year('year')->nullable();
             $table->string('shift')->nullable(); // Morning, Afternoon, Night
             $table->string('level')->nullable(); // e.g., High School 1st Year

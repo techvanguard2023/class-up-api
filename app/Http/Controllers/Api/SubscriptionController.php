@@ -269,19 +269,23 @@ class SubscriptionController extends Controller
             // Get plan from database
             $plan = Plan::findOrFail($planId);
 
-            // Create subscription in database
-            Subscription::create([
-                'user_id' => $userId,
-                'plan_id' => $planId,
-                'school_id' => $schoolId,
-                'status' => $stripeSubscription->status,
-                'stripe_customer_id' => $session->customer,
-                'stripe_subscription_id' => $session->subscription,
-                'stripe_price_id' => $plan->stripe_price_id,
-                'starts_at' => now(),
-                'ends_at' => $stripeSubscription->current_period_end ? now()->setTimestamp($stripeSubscription->current_period_end) : null,
-                'payment_method' => 'stripe',
-            ]);
+            // Create or update subscription in database
+            Subscription::updateOrCreate(
+                [
+                    'user_id' => $userId,
+                    'school_id' => $schoolId,
+                ],
+                [
+                    'plan_id' => $planId,
+                    'status' => $stripeSubscription->status,
+                    'stripe_customer_id' => $session->customer,
+                    'stripe_subscription_id' => $session->subscription,
+                    'stripe_price_id' => $plan->stripe_price_id,
+                    'starts_at' => now(),
+                    'ends_at' => $stripeSubscription->current_period_end ? now()->setTimestamp($stripeSubscription->current_period_end) : null,
+                    'payment_method' => 'stripe',
+                ]
+            );
 
             return response()->json([
                 'message' => 'Subscription confirmed successfully',
@@ -300,69 +304,6 @@ class SubscriptionController extends Controller
                 'code' => 'DATABASE_ERROR',
                 'message' => $e->getMessage(),
             ], 500);
-        }
-    }
-
-    /**
-     * Handle successful checkout session (deprecated - use confirm instead)
-     */
-    public function success(Request $request)
-    {
-        $sessionId = $request->query('session_id');
-        $frontendUrl = env('FRONTEND_URL', 'http://localhost:3000');
-
-        if (!$sessionId) {
-            return redirect($frontendUrl . '/subscription/failed?error=Missing+session_id');
-        }
-
-        try {
-            // Retrieve the checkout session from Stripe
-            $session = $this->stripe->checkout->sessions->retrieve($sessionId);
-
-            // Get user from metadata
-            $userId = $session->metadata->user_id ?? null;
-            $planId = $session->metadata->plan_id ?? null;
-            $schoolId = $session->metadata->school_id ?? null;
-
-            if (!$userId || !$planId) {
-                return redirect($frontendUrl . '/subscription/failed?error=Invalid+session+metadata');
-            }
-
-            $user = \App\Models\User::findOrFail($userId);
-
-            // Check if payment was successful
-            if ($session->payment_status !== 'paid') {
-                return redirect($frontendUrl . '/subscription/failed?error=Payment+not+completed');
-            }
-
-            // Get the subscription from Stripe
-            $stripeSubscription = $this->stripe->subscriptions->retrieve($session->subscription);
-
-            // Get plan from database
-            $plan = Plan::findOrFail($planId);
-
-            // Create subscription in database
-            Subscription::create([
-                'user_id' => $userId,
-                'plan_id' => $planId,
-                'school_id' => $schoolId,
-                'status' => $stripeSubscription->status,
-                'stripe_customer_id' => $session->customer,
-                'stripe_subscription_id' => $session->subscription,
-                'stripe_price_id' => $plan->stripe_price_id,
-                'starts_at' => now(),
-                'ends_at' => $stripeSubscription->current_period_end ? now()->setTimestamp($stripeSubscription->current_period_end) : null,
-                'payment_method' => 'stripe',
-            ]);
-
-            // Redirect to dashboard on success
-            return redirect($frontendUrl . '/?subscription=success');
-        }
-        catch (ApiErrorException $e) {
-            return redirect($frontendUrl . '/subscription/failed?error=' . urlencode($e->getMessage()));
-        }
-        catch (\Exception $e) {
-            return redirect($frontendUrl . '/subscription/failed?error=' . urlencode($e->getMessage()));
         }
     }
 

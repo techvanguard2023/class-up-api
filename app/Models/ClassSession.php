@@ -22,16 +22,12 @@ class ClassSession extends Model
         'start_time',
         'end_time',
         'days',
-        'capacity',
-        'enrolled',
         'modality',
         'color',
     ];
 
     protected $casts = [
         'days' => 'array',
-        'capacity' => 'integer',
-        'enrolled' => 'integer',
     ];
 
     public function teacher()

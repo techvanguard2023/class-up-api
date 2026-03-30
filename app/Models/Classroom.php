@@ -10,7 +10,7 @@ class Classroom extends Model
 {
     use SoftDeletes, BelongsToSchool;
 
-    protected $fillable = ['school_id', 'instructor_id', 'name', 'year', 'shift', 'level'];
+    protected $fillable = ['school_id', 'instructor_id', 'name', 'capacity', 'enrolled', 'year', 'shift', 'level'];
 
     public function instructor()
     {

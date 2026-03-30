@@ -18,6 +18,7 @@ class ClassroomController extends Controller
         $validated = $request->validate([
             'school_id' => 'required|exists:schools,id',
             'name' => 'required|string',
+            'capacity' => 'required|integer|min:1',
             'year' => 'nullable|integer',
             'shift' => 'nullable|string',
             'level' => 'nullable|string',
@@ -37,6 +38,7 @@ class ClassroomController extends Controller
         $validated = $request->validate([
             'school_id' => 'exists:schools,id',
             'name' => 'string',
+            'capacity' => 'integer|min:1',
             'year' => 'integer',
             'shift' => 'string',
             'level' => 'string',

@@ -8,9 +8,23 @@ use Illuminate\Http\Request;
 
 class EnrollmentController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return response()->json(Enrollment::with(['student', 'classroom'])->get());
+        $query = Enrollment::with(['student', 'classroom']);
+
+        if ($request->has('classroom_id')) {
+            $query->where('classroom_id', $request->query('classroom_id'));
+        }
+
+        if ($request->has('student_id')) {
+            $query->where('student_id', $request->query('student_id'));
+        }
+
+        if ($request->has('status')) {
+            $query->where('status', $request->query('status'));
+        }
+
+        return response()->json($query->get());
     }
 
     public function store(Request $request)

@@ -13,6 +13,8 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
+            $table->string('role')->default('admin'); // admin, user, teacher, student, guardian
+            $table->unsignedBigInteger('school_id')->nullable();
             $table->string('name');
             $table->string('last_name');
             $table->string('email')->unique();

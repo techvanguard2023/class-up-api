@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
+return new class extends Migration 
 {
     public function up(): void
     {
@@ -12,6 +12,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('student_id')->constrained()->onDelete('cascade');
             $table->foreignId('school_payment_plan_id')->constrained()->onDelete('cascade');
+            $table->integer('due_day')->nullable();
             $table->date('start_date');
             $table->date('end_date')->nullable();
             $table->boolean('active')->default(true);
