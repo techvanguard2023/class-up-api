@@ -28,6 +28,8 @@ use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\ExpenseController;
 use App\Http\Controllers\Api\IncomeController;
+use App\Http\Controllers\Api\WhatsAppInstanceController;
+use App\Http\Controllers\Api\BannerController;
 
 Route::prefix('v1')->group(function () {
 
@@ -110,6 +112,21 @@ Route::prefix('v1')->group(function () {
             Route::apiResource('products', ProductController::class);
             Route::apiResource('expenses', ExpenseController::class);
             Route::apiResource('incomes', IncomeController::class);
+
+            // Banner routes
+            Route::apiResource('banners', BannerController::class);
+
+            // WhatsApp Integration routes
+            Route::prefix('whatsapp')->group(function () {
+                Route::post('instances', [WhatsAppInstanceController::class, 'create'])->name('whatsapp.instances.create');
+                Route::get('instances', [WhatsAppInstanceController::class, 'indexSchoolInstances'])->name('whatsapp.instances.index');
+                Route::get('instances/all', [WhatsAppInstanceController::class, 'fetchAll'])->name('whatsapp.instances.fetchAll');
+                Route::get('info', [WhatsAppInstanceController::class, 'getInfo'])->name('whatsapp.info');
+                Route::post('instances/connect', [WhatsAppInstanceController::class, 'connect'])->name('whatsapp.instances.connect');
+                Route::post('instances/delete', [WhatsAppInstanceController::class, 'delete'])->name('whatsapp.instances.delete');
+                Route::post('webhook/set', [WhatsAppInstanceController::class, 'setWebhook'])->name('whatsapp.webhook.set');
+                Route::get('webhook/find', [WhatsAppInstanceController::class, 'getWebhook'])->name('whatsapp.webhook.find');
+            });
         });
     });
 });

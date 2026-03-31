@@ -5,17 +5,17 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Traits\BelongsToSchool;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ClassSession extends Model
 {
-    use HasFactory, BelongsToSchool;
+    use HasFactory, BelongsToSchool, SoftDeletes;
 
     protected $table = 'class_sessions';
 
     protected $fillable = [
         'school_id',
         'name',
-        'teacher_id',
         'instructor_id',
         'classroom_id',
         'subject_id',
@@ -29,11 +29,6 @@ class ClassSession extends Model
     protected $casts = [
         'days' => 'array',
     ];
-
-    public function teacher()
-    {
-        return $this->belongsTo(User::class, 'teacher_id');
-    }
 
     public function instructor()
     {

@@ -66,12 +66,22 @@ class ClassSessionController extends Controller
         return response()->json($classSession);
     }
 
-    public function destroy(ClassSession $classSession)
+    public function destroy(Request $request, $id)
     {
-        // Force delete attendances first (hard delete to avoid constraint conflicts)
-        $classSession->attendances()->forceDelete();
-        // Then force delete the class session
-        $classSession->forceDelete();
+        $user = $request->user();
+        $class = ClassSession::find($id);
+
+        if (!$class) {
+            return response()->json(['message' => 'Aula não encontrada'], 404);
+        }
+
+        if ($class->school_id !== $user->school_id) {
+            return response()->json(['message' => 'Você não tem permissão para excluir esta aula'], 403);
+        }
+
+        $class->delete();
         return response()->json(null, Response::HTTP_NO_CONTENT);
+
+
     }
 }
