@@ -110,11 +110,13 @@ class EvolutionApiService
         bool $webhookBase64 = true
     ): array {
         $payload = [
-            'enabled' => $enabled,
-            'url' => $url,
-            'webhookByEvents' => $webhookByEvents,
-            'webhookBase64' => $webhookBase64,
-            'events' => $events,
+            'webhook' => [
+                'enabled' => (bool) $enabled,
+                'url' => $url,
+                'webhookByEvents' => (bool) $webhookByEvents,
+                'webhookBase64' => (bool) $webhookBase64,
+                'events' => $events,
+            ]
         ];
 
         return $this->makeRequest('POST', "/webhook/set/{$instanceName}", $payload);

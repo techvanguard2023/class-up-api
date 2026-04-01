@@ -131,6 +131,7 @@ Route::prefix('v1')->group(function () {
                 Route::delete('instances/{id}', [WhatsAppInstanceController::class, 'destroyById'])->name('whatsapp.instances.destroyById');
                 Route::post('instances/{id}/delete', [WhatsAppInstanceController::class, 'deleteById'])->name('whatsapp.instances.deleteById');
                 Route::post('instances/delete', [WhatsAppInstanceController::class, 'delete'])->name('whatsapp.instances.delete');
+                Route::post('instances/{id}/webhook', [WhatsAppInstanceController::class, 'setWebhookById'])->name('whatsapp.webhook.setById');
                 Route::post('webhook/set', [WhatsAppInstanceController::class, 'setWebhook'])->name('whatsapp.webhook.set');
                 Route::get('webhook/find', [WhatsAppInstanceController::class, 'getWebhook'])->name('whatsapp.webhook.find');
             });

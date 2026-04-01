@@ -386,6 +386,57 @@ class WhatsAppInstanceController extends Controller
     }
 
     /**
+     * Set webhook for an instance by ID
+     *
+     * @param Request $request
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function setWebhookById(Request $request, $id)
+    {
+        $request->validate([
+            'url' => 'required|url',
+            'events' => 'array',
+            'events.*' => 'string',
+            'enabled' => 'boolean',
+            'webhookByEvents' => 'boolean',
+            'webhookBase64' => 'boolean',
+        ]);
+
+        try {
+            $instance = WhatsAppInstance::findOrFail($id);
+
+            $response = $this->evolutionService->setWebhook(
+                instanceName: $instance->instance_name,
+                url: $request->url,
+                events: $request->input('events', ['MESSAGES_UPSERT', 'MESSAGES_UPDATE', 'MESSAGES_DELETE']),
+                enabled: $request->boolean('enabled', true),
+                webhookByEvents: $request->boolean('webhookByEvents', true),
+                webhookBase64: $request->boolean('webhookBase64', true)
+            );
+
+            if (!$response['success']) {
+                return response()->json([
+                    'message' => 'Falha ao configurar webhook',
+                    'error' => $response['message'],
+                ], 400);
+            }
+
+            $instance->update(['webhook_url' => $request->url, 'status' => 'connected']);
+
+            return response()->json([
+                'message' => 'Webhook configurado com sucesso',
+                'data' => $response['data']['response'] ?? $response['data'],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Erro ao configurar webhook',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * Set webhook for an instance
      *
      * @param Request $request
