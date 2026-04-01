@@ -124,7 +124,12 @@ Route::prefix('v1')->group(function () {
                 Route::get('instances', [WhatsAppInstanceController::class, 'indexSchoolInstances'])->name('whatsapp.instances.index');
                 Route::get('instances/all', [WhatsAppInstanceController::class, 'fetchAll'])->name('whatsapp.instances.fetchAll');
                 Route::get('info', [WhatsAppInstanceController::class, 'getInfo'])->name('whatsapp.info');
+                Route::get('instances/{id}/status', [WhatsAppInstanceController::class, 'getStatusById'])->name('whatsapp.instances.statusById');
+                Route::get('instances/status', [WhatsAppInstanceController::class, 'getStatus'])->name('whatsapp.instances.status');
+                Route::post('instances/{id}/connect', [WhatsAppInstanceController::class, 'connectById'])->name('whatsapp.instances.connectById');
                 Route::post('instances/connect', [WhatsAppInstanceController::class, 'connect'])->name('whatsapp.instances.connect');
+                Route::delete('instances/{id}', [WhatsAppInstanceController::class, 'destroyById'])->name('whatsapp.instances.destroyById');
+                Route::post('instances/{id}/delete', [WhatsAppInstanceController::class, 'deleteById'])->name('whatsapp.instances.deleteById');
                 Route::post('instances/delete', [WhatsAppInstanceController::class, 'delete'])->name('whatsapp.instances.delete');
                 Route::post('webhook/set', [WhatsAppInstanceController::class, 'setWebhook'])->name('whatsapp.webhook.set');
                 Route::get('webhook/find', [WhatsAppInstanceController::class, 'getWebhook'])->name('whatsapp.webhook.find');

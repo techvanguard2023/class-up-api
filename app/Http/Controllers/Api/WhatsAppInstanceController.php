@@ -29,15 +29,54 @@ class WhatsAppInstanceController extends Controller
     {
         $request->validate([
             'school_id' => 'required|exists:schools,id',
+            'instance_name' => 'required|string|unique:whatsapp_instances,instance_name',
+            'integration' => 'nullable|string',
             'webhook_url' => 'nullable|url',
             'token' => 'nullable|string',
             'number' => 'nullable|string',
+            'qrcode' => 'nullable|boolean',
+            'rejectCall' => 'nullable|boolean',
+            'groupsIgnore' => 'nullable|boolean',
+            'alwaysOnline' => 'nullable|boolean',
+            'readMessages' => 'nullable|boolean',
+            'readStatus' => 'nullable|boolean',
+            'syncFullHistory' => 'nullable|boolean',
         ]);
 
         $school = School::findOrFail($request->school_id);
-        $instanceName = $school->slug;
+        $instanceName = $request->instance_name;
 
         $config = [];
+
+        // Add integration config parameters
+        if ($request->has('qrcode')) {
+            $config['qrcode'] = $request->boolean('qrcode');
+        }
+        if ($request->has('rejectCall')) {
+            $config['rejectCall'] = $request->boolean('rejectCall');
+        }
+        if ($request->has('groupsIgnore')) {
+            $config['groupsIgnore'] = $request->boolean('groupsIgnore');
+        }
+        if ($request->has('alwaysOnline')) {
+            $config['alwaysOnline'] = $request->boolean('alwaysOnline');
+        }
+        if ($request->has('readMessages')) {
+            $config['readMessages'] = $request->boolean('readMessages');
+        }
+        if ($request->has('readStatus')) {
+            $config['readStatus'] = $request->boolean('readStatus');
+        }
+        if ($request->has('syncFullHistory')) {
+            $config['syncFullHistory'] = $request->boolean('syncFullHistory');
+        }
+
+        // Add integration type if provided
+        if ($request->has('integration')) {
+            $config['integration'] = $request->integration;
+        }
+
+        // Add webhook config
         if ($request->webhook_url) {
             $config['webhook'] = [
                 'url' => $request->webhook_url,
@@ -67,14 +106,17 @@ class WhatsAppInstanceController extends Controller
 
             $instanceData = $response['data']['response'] ?? $response['data'];
 
+            // Handle nested instance data structure
+            $instance = $instanceData['instance'] ?? $instanceData;
+
             WhatsAppInstance::create([
                 'school_id' => $school->id,
                 'instance_name' => $instanceName,
-                'instance_id' => $instanceData['instanceId'] ?? null,
-                'api_key' => $instanceData['apikey'] ?? null,
-                'status' => 'pending',
-                'server_url' => $instanceData['serverUrl'] ?? null,
-                'integration' => $instanceData['integration'] ?? 'WHATSAPP-BAILEYS',
+                'instance_id' => $instance['instanceId'] ?? null,
+                'api_key' => $instance['apikey'] ?? null,
+                'status' => 'connecting',
+                'server_url' => $instance['serverUrl'] ?? null,
+                'integration' => $request->integration ?? $instance['integration'] ?? 'WHATSAPP-BAILEYS',
                 'webhook_url' => $request->webhook_url,
             ]);
 
@@ -166,6 +208,40 @@ class WhatsAppInstanceController extends Controller
     }
 
     /**
+     * Connect to an instance by ID (get QR code)
+     *
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function connectById($id)
+    {
+        try {
+            $instance = WhatsAppInstance::findOrFail($id);
+
+            $response = $this->evolutionService->connectInstance($instance->instance_name);
+
+            if (!$response['success']) {
+                return response()->json([
+                    'message' => 'Falha ao conectar instância',
+                    'error' => $response['message'],
+                ], 400);
+            }
+
+            $instance->update(['status' => 'connecting']);
+
+            return response()->json([
+                'message' => 'Instância conectada com sucesso',
+                'data' => $response['data']['response'] ?? $response['data'],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Erro ao conectar instância',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * Connect to an instance (get QR code)
      *
      * @param Request $request
@@ -197,6 +273,77 @@ class WhatsAppInstanceController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Erro ao conectar instância',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Delete an instance by ID (REST API)
+     * Deletes from database and Evolution API
+     *
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function destroyById($id)
+    {
+        try {
+            $instance = WhatsAppInstance::findOrFail($id);
+
+            // Delete from Evolution API using instance_name
+            $response = $this->evolutionService->deleteInstance($instance->instance_name);
+
+            if (!$response['success']) {
+                return response()->json([
+                    'message' => 'Falha ao deletar instância',
+                    'error' => $response['message'],
+                ], 400);
+            }
+
+            // Delete from database
+            $instance->delete();
+
+            return response()->json([
+                'message' => 'Instância deletada com sucesso',
+                'data' => $response['data'],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Erro ao deletar instância',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Delete an instance by ID (POST method)
+     *
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function deleteById($id)
+    {
+        try {
+            $instance = WhatsAppInstance::findOrFail($id);
+
+            $response = $this->evolutionService->deleteInstance($instance->instance_name);
+
+            if (!$response['success']) {
+                return response()->json([
+                    'message' => 'Falha ao deletar instância',
+                    'error' => $response['message'],
+                ], 400);
+            }
+
+            $instance->delete();
+
+            return response()->json([
+                'message' => 'Instância deletada com sucesso',
+                'data' => $response['data'],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Erro ao deletar instância',
                 'error' => $e->getMessage(),
             ], 500);
         }
@@ -317,6 +464,91 @@ class WhatsAppInstanceController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Erro ao obter webhook',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Get connection state of an instance by ID
+     *
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getStatusById($id)
+    {
+        try {
+            $instance = WhatsAppInstance::findOrFail($id);
+
+            $response = $this->evolutionService->getConnectionState($instance->instance_name);
+
+            if (!$response['success']) {
+                return response()->json([
+                    'message' => 'Falha ao obter status da instância',
+                    'error' => $response['message'],
+                ], 400);
+            }
+
+            $data = $response['data']['response'] ?? $response['data'];
+            $state = $data['instance']['state'] ?? $data['state'] ?? null;
+
+            // Update instance status based on connection state
+            if ($state) {
+                $status = $state === 'open' ? 'connected' : ($state === 'connecting' ? 'connecting' : 'disconnected');
+                $instance->update(['status' => $status]);
+            }
+
+            return response()->json([
+                'message' => 'Status da instância obtido com sucesso',
+                'data' => $data,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Erro ao obter status da instância',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Get connection state of an instance by name
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getStatus(Request $request)
+    {
+        $request->validate([
+            'instance_name' => 'required|string',
+        ]);
+
+        try {
+            $response = $this->evolutionService->getConnectionState($request->instance_name);
+
+            if (!$response['success']) {
+                return response()->json([
+                    'message' => 'Falha ao obter status da instância',
+                    'error' => $response['message'],
+                ], 400);
+            }
+
+            $data = $response['data']['response'] ?? $response['data'];
+            $state = $data['instance']['state'] ?? $data['state'] ?? null;
+
+            // Update instance status in database
+            if ($state) {
+                $status = $state === 'open' ? 'connected' : ($state === 'connecting' ? 'connecting' : 'disconnected');
+                WhatsAppInstance::where('instance_name', $request->instance_name)
+                    ->update(['status' => $status]);
+            }
+
+            return response()->json([
+                'message' => 'Status da instância obtido com sucesso',
+                'data' => $data,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Erro ao obter status da instância',
                 'error' => $e->getMessage(),
             ], 500);
         }

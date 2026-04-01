@@ -132,6 +132,17 @@ class EvolutionApiService
     }
 
     /**
+     * Get connection state of an instance
+     *
+     * @param string $instanceName
+     * @return array
+     */
+    public function getConnectionState(string $instanceName): array
+    {
+        return $this->makeRequest('GET', "/instance/connectionState/{$instanceName}");
+    }
+
+    /**
      * Make HTTP request to Evolution API
      *
      * @param string $method
