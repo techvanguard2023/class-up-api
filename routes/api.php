@@ -87,9 +87,11 @@ Route::prefix('v1')->group(function () {
         // Student endpoints (no subscription required)
         Route::apiResource('students', StudentController::class);
 
+        // Classes endpoint (no subscription required - users need to see their dependents' classes)
+        Route::apiResource('classes', ClassSessionController::class);
+
         // All protected routes that require active subscription
         Route::middleware('validate.subscription')->group(function () {
-            Route::apiResource('classes', ClassSessionController::class);
             Route::apiResource('certificate-templates', CertificateTemplateController::class);
             Route::apiResource('certificates', CertificateController::class);
 

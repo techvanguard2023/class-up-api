@@ -11,7 +11,21 @@ class ClassSessionController extends Controller
 {
     public function index(Request $request)
     {
+        $user = $request->user();
         $query = ClassSession::with('instructor');
+
+        // Filter by school
+        $query->where('school_id', $user->school_id);
+
+        // If user is not admin, only show classes that their dependents are enrolled in
+        if ($user->role !== 'admin') {
+            $query->whereHas('classroom.enrollments', function ($q) use ($user) {
+                $q->whereHas('student.guardians', function ($sq) use ($user) {
+                    // Show classes where the student is a dependent of this user
+                    $sq->where('user_id', $user->id);
+                });
+            });
+        }
 
         if ($request->has('classroom_id')) {
             $query->where('classroom_id', $request->query('classroom_id'));
@@ -25,7 +39,8 @@ class ClassSessionController extends Controller
             $query->where('subject_id', $request->query('subject_id'));
         }
 
-        return response()->json($query->get());
+        $perPage = $request->per_page ?? 15;
+        return response()->json($query->paginate($perPage));
     }
 
     public function store(Request $request)

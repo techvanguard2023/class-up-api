@@ -19,7 +19,14 @@ class StudentController extends Controller
             return response()->json(['message' => 'Usuário não está vinculado a nenhuma escola.'], 403);
         }
 
-        $students = Student::where('school_id', $user->school_id)->get();
+        $query = Student::where('school_id', $user->school_id);
+
+        // Filter by user_id if provided
+        if ($request->has('user_id')) {
+            $query->where('user_id', $request->user_id);
+        }
+
+        $students = $query->paginate($request->per_page ?? 15);
         return response()->json($students);
     }
 
