@@ -12,7 +12,20 @@
       "Read(//tmp/**)",
       "Bash(python3:*)",
       "Read(///wsl.localhost/Ubuntu-24.04/home/masterdba6/**)",
-      "Read(//c/Users/Robson/**)"
+      "Read(//c/Users/Robson/**)",
+      "Bash(composer require:*)",
+      "Bash(php -r \"echo 'PHP version: ' . phpversion\\(\\);\")",
+      "Bash(ls -la config/broadcast*)",
+      "Bash(find /mnt -name \"class-up-api\" -type d 2>/dev/null | head -5)",
+      "mcp__Claude_in_Chrome__tabs_context_mcp",
+      "mcp__Claude_in_Chrome__navigate",
+      "mcp__Claude_in_Chrome__computer",
+      "mcp__Claude_in_Chrome__find",
+      "mcp__Claude_in_Chrome__read_console_messages",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost/api/v1/school-types)",
+      "mcp__Claude_in_Chrome__read_network_requests",
+      "Bash(curl -s http://localhost/api/v1/school-types)",
+      "mcp__Claude_in_Chrome__form_input"
     ]
   }
 }
