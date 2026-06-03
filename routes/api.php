@@ -30,6 +30,7 @@ use App\Http\Controllers\Api\ExpenseController;
 use App\Http\Controllers\Api\IncomeController;
 use App\Http\Controllers\Api\WhatsAppInstanceController;
 use App\Http\Controllers\Api\BannerController;
+use App\Http\Controllers\Api\GuardianPaymentController;
 
 Route::prefix('v1')->group(function () {
 
@@ -93,6 +94,10 @@ Route::prefix('v1')->group(function () {
         // Guardian subscriptions endpoint (no subscription required - users need to see their payment plans)
         Route::get('guardians/subscriptions', [GuardianController::class, 'subscriptions'])->name('guardians.subscriptions');
 
+        // Guardian payment notifications (no subscription required - users need to inform payments)
+        Route::get('guardians/subscriptions/payment', [GuardianPaymentController::class, 'index'])->name('guardians.payment.index');
+        Route::post('guardians/subscriptions/payment', [GuardianPaymentController::class, 'store'])->name('guardians.payment.store');
+
         // All protected routes that require active subscription
         Route::middleware('validate.subscription')->group(function () {
             Route::apiResource('certificate-templates', CertificateTemplateController::class);
@@ -120,6 +125,11 @@ Route::prefix('v1')->group(function () {
 
             // Banner routes
             Route::apiResource('banners', BannerController::class);
+
+            // Admin: payment notification management
+            Route::get('payment-notifications', [GuardianPaymentController::class, 'adminIndex'])->name('payment-notifications.index');
+            Route::post('payment-notifications/{id}/confirm', [GuardianPaymentController::class, 'confirm'])->name('payment-notifications.confirm');
+            Route::post('payment-notifications/{id}/reject', [GuardianPaymentController::class, 'reject'])->name('payment-notifications.reject');
 
             // WhatsApp Integration routes
             Route::prefix('whatsapp')->group(function () {

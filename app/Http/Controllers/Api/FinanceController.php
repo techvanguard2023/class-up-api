@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Income;
 use App\Models\Payment;
 use Illuminate\Http\Request;
 use DB;
@@ -28,12 +29,19 @@ class FinanceController extends Controller
             ->where('student_payment_plans.active', true)
             ->sum('school_payment_plans.price');
 
-        // Total revenue (paid payments)
-        $totalRevenue = Payment::join('school_payment_plans', 'payments.school_payment_plan_id', '=', 'school_payment_plans.id')
+        // Total revenue = pagamentos da tabela payments (paid) + incomes recebidos (status=received)
+        $totalRevenuePayments = Payment::join('school_payment_plans', 'payments.school_payment_plan_id', '=', 'school_payment_plans.id')
             ->where('school_payment_plans.school_id', $schoolId)
             ->where('payments.status', 'paid')
             ->where('payments.paid_date', '>=', $since)
             ->sum('payments.amount');
+
+        $totalRevenueIncomes = Income::where('school_id', $schoolId)
+            ->where('status', 'received')
+            ->where('date', '>=', $since)
+            ->sum('amount');
+
+        $totalRevenue = $totalRevenuePayments + $totalRevenueIncomes;
 
         // Total overdue (late payments)
         $totalOverdue = Payment::join('school_payment_plans', 'payments.school_payment_plan_id', '=', 'school_payment_plans.id')
@@ -65,12 +73,19 @@ class FinanceController extends Controller
                 })
                 ->sum('school_payment_plans.price');
 
-            // Payments received during this month
-            $revenue = Payment::join('school_payment_plans', 'payments.school_payment_plan_id', '=', 'school_payment_plans.id')
+            // Payments received during this month (tabela payments + tabela incomes)
+            $revenuePayments = Payment::join('school_payment_plans', 'payments.school_payment_plan_id', '=', 'school_payment_plans.id')
                 ->where('school_payment_plans.school_id', $schoolId)
                 ->where('payments.status', 'paid')
                 ->whereBetween('payments.paid_date', [$monthStart, $monthEnd])
                 ->sum('payments.amount');
+
+            $revenueIncomes = Income::where('school_id', $schoolId)
+                ->where('status', 'received')
+                ->whereBetween('date', [$monthStart, $monthEnd])
+                ->sum('amount');
+
+            $revenue = $revenuePayments + $revenueIncomes;
 
             // Overdue (active plans before this month with no paid payment in that month)
             $activeStudentPlans = \App\Models\StudentPaymentPlan::join('school_payment_plans', 'student_payment_plans.school_payment_plan_id', '=', 'school_payment_plans.id')
@@ -111,42 +126,44 @@ class FinanceController extends Controller
             ];
         }
 
-        // Payment methods breakdown
-        $byMethod = Payment::join('school_payment_plans', 'payments.school_payment_plan_id', '=', 'school_payment_plans.id')
+        // Payment methods breakdown (payments + incomes)
+        $byMethodPayments = Payment::join('school_payment_plans', 'payments.school_payment_plan_id', '=', 'school_payment_plans.id')
             ->where('school_payment_plans.school_id', $schoolId)
             ->where('payments.status', 'paid')
             ->where('payments.paid_date', '>=', $since)
             ->leftJoin('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
             ->groupBy('payment_methods.name')
-            ->select(
-                'payment_methods.name',
-                DB::raw('COUNT(*) as count'),
-                DB::raw('SUM(payments.amount) as total')
-            )
-            ->get()
-            ->map(fn($row) => [
-                'method' => $row->name ?? 'Sem método',
-                'count'  => $row->count,
-                'total'  => round($row->total, 2),
-            ]);
+            ->select('payment_methods.name as method', DB::raw('COUNT(*) as count'), DB::raw('SUM(payments.amount) as total'))
+            ->get();
 
-        // Plans breakdown
+        $byMethodIncomes = Income::where('school_id', $schoolId)
+            ->where('status', 'received')
+            ->where('date', '>=', $since)
+            ->groupBy('payment_method')
+            ->select('payment_method as method', DB::raw('COUNT(*) as count'), DB::raw('SUM(amount) as total'))
+            ->get();
+
+        $byMethodMerged = collect();
+        foreach (array_merge($byMethodPayments->toArray(), $byMethodIncomes->toArray()) as $row) {
+            $key = $row['method'] ?? 'Sem método';
+            if ($byMethodMerged->has($key)) {
+                $existing = $byMethodMerged->get($key);
+                $byMethodMerged->put($key, ['method' => $key, 'count' => $existing['count'] + $row['count'], 'total' => $existing['total'] + $row['total']]);
+            } else {
+                $byMethodMerged->put($key, ['method' => $key, 'count' => $row['count'], 'total' => round($row['total'], 2)]);
+            }
+        }
+        $byMethod = $byMethodMerged->values();
+
+        // Plans breakdown (payments + incomes via description)
         $byPlan = Payment::join('school_payment_plans', 'payments.school_payment_plan_id', '=', 'school_payment_plans.id')
             ->where('school_payment_plans.school_id', $schoolId)
             ->where('payments.status', 'paid')
             ->where('payments.paid_date', '>=', $since)
             ->groupBy('school_payment_plans.name')
-            ->select(
-                'school_payment_plans.name',
-                DB::raw('COUNT(*) as count'),
-                DB::raw('SUM(payments.amount) as total')
-            )
+            ->select('school_payment_plans.name', DB::raw('COUNT(*) as count'), DB::raw('SUM(payments.amount) as total'))
             ->get()
-            ->map(fn($row) => [
-                'plan'  => $row->name,
-                'count' => $row->count,
-                'total' => round($row->total, 2),
-            ]);
+            ->map(fn($row) => ['plan' => $row->name, 'count' => $row->count, 'total' => round($row->total, 2)]);
 
         // Students with late payments
         $studentsWithLatePay = Payment::join('school_payment_plans', 'payments.school_payment_plan_id', '=', 'school_payment_plans.id')
