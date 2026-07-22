@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Classroom;
+use App\Models\Instructor;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class ClassroomController extends Controller
 {
@@ -16,14 +18,17 @@ class ClassroomController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'school_id' => 'required|exists:schools,id',
             'name' => 'required|string',
             'capacity' => 'required|integer|min:1',
+            'instructor_id' => 'nullable|exists:instructors,id',
             'year' => 'nullable|integer',
             'shift' => 'nullable|string',
             'level' => 'nullable|string',
         ]);
 
+        $this->assertInstructorInSchool($validated['instructor_id'] ?? null);
+
+        // school_id is filled automatically by the BelongsToSchool trait.
         $classroom = Classroom::create($validated);
         return response()->json($classroom, 201);
     }
@@ -36,16 +41,37 @@ class ClassroomController extends Controller
     public function update(Request $request, Classroom $classroom)
     {
         $validated = $request->validate([
-            'school_id' => 'exists:schools,id',
             'name' => 'string',
             'capacity' => 'integer|min:1',
+            'instructor_id' => 'nullable|exists:instructors,id',
             'year' => 'integer',
             'shift' => 'string',
             'level' => 'string',
         ]);
 
+        if (array_key_exists('instructor_id', $validated)) {
+            $this->assertInstructorInSchool($validated['instructor_id']);
+        }
+
         $classroom->update($validated);
         return response()->json($classroom);
+    }
+
+    /**
+     * Ensure the instructor (when provided) belongs to the caller's school.
+     */
+    private function assertInstructorInSchool(?int $instructorId): void
+    {
+        if ($instructorId === null) {
+            return;
+        }
+
+        // Global scope limits this to the caller's school.
+        if (!Instructor::find($instructorId)) {
+            throw ValidationException::withMessages([
+                'instructor_id' => ['O instrutor não pertence à sua escola.'],
+            ]);
+        }
     }
 
     public function destroy(Classroom $classroom)

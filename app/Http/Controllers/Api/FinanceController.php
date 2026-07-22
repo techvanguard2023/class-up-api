@@ -173,13 +173,20 @@ class FinanceController extends Controller
             ->distinct()
             ->count();
 
+        // Conversion rate must compare like periods: total revenue collected
+        // over the window vs. total expected over the same window (the sum of
+        // each month's expected amount), not a single month's MRR snapshot.
+        $periodExpected = round(array_sum(array_column($monthly, 'subscriptions')), 2);
+        $periodRevenue  = round(array_sum(array_column($monthly, 'revenue')), 2);
+
         return response()->json([
             'currency'                => 'BRL',
             'total_expected'          => round($totalExpected ?? 0, 2),
             'total_revenue'           => round($totalRevenue ?? 0, 2),
             'total_overdue'           => round($totalOverdue ?? 0, 2),
             'total_pending'           => round($totalPending ?? 0, 2),
-            'conversion_rate'         => $totalExpected > 0 ? round(($totalRevenue / $totalExpected) * 100, 2) : 0,
+            'period_expected'         => $periodExpected,
+            'conversion_rate'         => $periodExpected > 0 ? round(($periodRevenue / $periodExpected) * 100, 2) : 0,
             'students_with_late_pay'  => $studentsWithLatePay,
             'monthly'                 => $monthly,
             'by_method'               => $byMethod,
