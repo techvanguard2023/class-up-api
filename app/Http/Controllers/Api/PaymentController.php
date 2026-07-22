@@ -66,14 +66,14 @@ class PaymentController extends Controller
             ->firstOrFail();
 
         // Verify payment plan belongs to school (if provided)
-        if ($validated['school_payment_plan_id']) {
+        if ($validated['school_payment_plan_id'] ?? null) {
             SchoolPaymentPlan::where('id', $validated['school_payment_plan_id'])
                 ->where('school_id', $schoolId)
                 ->firstOrFail();
         }
 
         // Verify payment method belongs to school (if provided)
-        if ($validated['payment_method_id']) {
+        if ($validated['payment_method_id'] ?? null) {
             PaymentMethod::where('id', $validated['payment_method_id'])
                 ->where('school_id', $schoolId)
                 ->firstOrFail();
@@ -86,11 +86,15 @@ class PaymentController extends Controller
 
     public function show(Payment $payment)
     {
+        $this->authorizeSchool($payment);
+
         return response()->json($payment);
     }
 
     public function update(Request $request, Payment $payment)
     {
+        $this->authorizeSchool($payment);
+
         // Cannot edit if already paid
         if ($payment->status === 'paid') {
             return response()->json([
@@ -130,6 +134,8 @@ class PaymentController extends Controller
 
     public function destroy(Payment $payment)
     {
+        $this->authorizeSchool($payment);
+
         $payment->delete();
 
         return response()->json(null, Response::HTTP_NO_CONTENT);
@@ -137,6 +143,8 @@ class PaymentController extends Controller
 
     public function markAsPaid(Request $request, Payment $payment)
     {
+        $this->authorizeSchool($payment);
+
         $validated = $request->validate([
             'paid_date' => 'nullable|date',
         ]);
@@ -145,5 +153,17 @@ class PaymentController extends Controller
         $payment->markAsPaid($paidDate);
 
         return response()->json($payment);
+    }
+
+    /**
+     * Ensure the payment belongs to the authenticated user's school.
+     */
+    private function authorizeSchool(Payment $payment): void
+    {
+        $student = Student::withoutGlobalScopes()->find($payment->student_id);
+
+        if (!$student || $student->school_id !== Auth::user()->school_id) {
+            abort(404);
+        }
     }
 }

@@ -116,7 +116,7 @@ Route::prefix('v1')->group(function () {
             Route::apiResource('payment-methods', PaymentMethodController::class);
             Route::apiResource('student-payment-plans', StudentPaymentPlanController::class);
             Route::apiResource('payments', PaymentController::class);
-            Route::post('payments/{id}/mark-as-paid', [PaymentController::class, 'markAsPaid'])->name('payments.markAsPaid');
+            Route::post('payments/{payment}/mark-as-paid', [PaymentController::class, 'markAsPaid'])->name('payments.markAsPaid');
 
             // Financial management routes
             Route::apiResource('products', ProductController::class);
