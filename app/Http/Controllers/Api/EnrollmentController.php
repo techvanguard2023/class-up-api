@@ -3,8 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Classroom;
 use App\Models\Enrollment;
+use App\Models\Student;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class EnrollmentController extends Controller
 {
@@ -35,6 +38,34 @@ class EnrollmentController extends Controller
             'status' => 'string',
             'year' => 'required|integer',
         ]);
+
+        // Resolve within the current school (global scope hides other schools).
+        $student = Student::find($validated['student_id']);
+        $classroom = Classroom::find($validated['classroom_id']);
+
+        if (!$student || !$classroom) {
+            throw ValidationException::withMessages([
+                'student_id' => ['Aluno ou turma não pertence à sua escola.'],
+            ]);
+        }
+
+        // Prevent enrolling the same student twice in the same classroom.
+        $alreadyEnrolled = Enrollment::where('student_id', $student->id)
+            ->where('classroom_id', $classroom->id)
+            ->exists();
+
+        if ($alreadyEnrolled) {
+            throw ValidationException::withMessages([
+                'student_id' => ['Este aluno já está matriculado nesta turma.'],
+            ]);
+        }
+
+        // Enforce classroom capacity.
+        if ($classroom->enrolled >= $classroom->capacity) {
+            throw ValidationException::withMessages([
+                'classroom_id' => ['A turma atingiu a capacidade máxima.'],
+            ]);
+        }
 
         $enrollment = Enrollment::create($validated);
         return response()->json($enrollment, 201);

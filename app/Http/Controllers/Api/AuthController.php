@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use App\Models\School;
 use App\Models\Guardian;
+use App\Models\Plan;
+use App\Models\Subscription;
 
 class AuthController extends Controller
 {
@@ -58,6 +60,20 @@ class AuthController extends Controller
 
                 // Link admin to their new school
                 $user->update(['school_id' => $school->id]);
+
+                // Give the new school the free plan so onboarding isn't blocked
+                // by the subscription middleware.
+                $freePlan = Plan::where('price', 0)->where('active', true)->first();
+                if ($freePlan) {
+                    Subscription::create([
+                        'school_id' => $school->id,
+                        'user_id' => $user->id,
+                        'plan_id' => $freePlan->id,
+                        'status' => 'active',
+                        'starts_at' => now(),
+                        'payment_method' => 'free',
+                    ]);
+                }
             }
             else {
 

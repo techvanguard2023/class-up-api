@@ -99,12 +99,11 @@ class DemoDataSeeder extends Seeder
             ]));
 
         // ── Classrooms (note the small capacity to exercise limits) ───────
-        // NOTE: classrooms table has no instructor_id column (model/schema
-        // mismatch), so instructor is assigned at the class_session level below.
         $turmaA = Classroom::create([
             'school_id' => $school->id,
+            'instructor_id' => $instructors[0]->id,
             'name' => 'Turma A - Inglês Básico',
-            'capacity' => 5,
+            'capacity' => 10,
             'year' => (int) now()->year,
             'shift' => 'Manhã',
             'level' => 'Básico',
@@ -112,6 +111,7 @@ class DemoDataSeeder extends Seeder
 
         $turmaB = Classroom::create([
             'school_id' => $school->id,
+            'instructor_id' => $instructors[1]->id,
             'name' => 'Turma B - Espanhol Intermediário',
             'capacity' => 8,
             'year' => (int) now()->year,
